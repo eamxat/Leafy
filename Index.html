@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+    <title>Leafy Theme Xatframe</title>
+    <style>
+        :root {
+            /*
+               Posiciones aproximadas basadas en los recuadros rojos indicados
+               sobre el fondo de la escena. Ajusta estos porcentajes si necesitas
+               afinar la posición exacta de cada elemento.
+            */
+            --sleep-top: 63%;
+            --sleep-left: 36.5%;
+
+            --diadema-top: 47%;
+            --diadema-left: 14%;
+
+            --blanket-top: 58%;
+            --blanket-left: 58%;
+
+            /* Nuevo smile: posición del recuadro rojo indicado */
+            --strawberry-top: 45.5%;
+            --strawberry-left: 48.5%;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+        }
+
+        html {
+            /* Fallback para navegadores que no soportan dvh (Safari viejo, WebView Android viejo) */
+            height: 100%;
+            height: -webkit-fill-available;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #72b5f7; /* Color de respaldo */
+            font-family: sans-serif;
+            /* Evita seleccionar texto/imágenes o hacer zoom accidental con doble tap en iOS/Android */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+            touch-action: manipulation;
+            overscroll-behavior: none;
+        }
+
+        .scene {
+            position: relative;
+            width: 100vw;
+            /* Triple fallback de altura para máxima compatibilidad:
+               1) 100vh (todos los navegadores)
+               2) calc(var(--vh)*100) (Safari/iOS antiguo con barra de direcciones dinámica, vía JS)
+               3) 100dvh (navegadores modernos con soporte de viewport dinámico) */
+            height: 100vh;
+            height: calc(var(--vh, 1vh) * 100);
+            height: 100dvh;
+            /* Respeta zonas seguras en iPhones con notch/Dynamic Island */
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            background-image: url('https://xatimg.com/image/AtasfMua8HJC.png');
+            background-size: cover;
+            background-position: center bottom;
+            background-repeat: no-repeat;
+            overflow: hidden;
+        }
+
+        /*
+           Cada elemento (sleep, diadema, blanket) ahora es independiente y
+           está disperso por la escena en lugar de apilado sobre un único
+           personaje. Se conserva el tamaño intrínseco (nativo) del webp para
+           evitar cualquier escalado, pixelación o compresión.
+        */
+        .scene-item {
+            position: absolute;
+            width: auto;
+            height: auto;
+            max-width: none;
+            image-rendering: high-quality;
+            -webkit-user-drag: none;
+            display: block;
+            z-index: 4;
+        }
+
+        .item-sleep {
+            top: var(--sleep-top);
+            left: var(--sleep-left);
+            z-index: 6; /* el personaje dormido queda ligeramente al frente */
+        }
+
+        .item-diadema {
+            top: var(--diadema-top);
+            left: var(--diadema-left);
+        }
+
+        .item-blanket {
+            top: var(--blanket-top);
+            left: var(--blanket-left);
+        }
+
+        .item-strawberry {
+            top: var(--strawberry-top);
+            left: var(--strawberry-left);
+        }
+
+        /* Logotipo, esquina inferior derecha, tamaño moderado y responsivo */
+        .brand-logo {
+            position: absolute;
+            right: 2vw;
+            bottom: 2vh;
+            width: clamp(40px, 5vw, 85px);
+            height: auto;
+            max-width: none;
+            image-rendering: high-quality;
+            -webkit-user-drag: none;
+            pointer-events: none;
+            z-index: 20;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+        }
+
+        /* Nubes: contenedor más angosto en altura para que queden más arriba */
+        .clouds-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 24vh; /* antes 32vh: ahora aún más arriba */
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .cloud-wrapper {
+            position: absolute;
+            top: var(--start-y);
+            left: -30vw; /* Inicia fuera de la pantalla a la izquierda */
+            will-change: transform;
+            animation: moveX var(--duration-x) linear infinite;
+            animation-delay: var(--delay);
+        }
+
+        .cloud-inner {
+            will-change: transform;
+            /* Oscilación vertical súper sutil de la nube */
+            animation: floatY var(--duration-y) ease-in-out infinite alternate;
+            animation-delay: var(--delay);
+        }
+
+        .cloud-inner img {
+            width: auto;
+            height: auto;
+            max-width: none;
+            opacity: var(--cloud-opacity);
+            image-rendering: high-quality;
+            /* Reducidas para dar sensación de mayor profundidad/realismo */
+            transform: scale(var(--cloud-scale));
+            transform-origin: center;
+        }
+
+        .butterflies-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5; /* Detrás del personaje, delante de algunas nubes */
+        }
+
+        .butterfly-wrapper {
+            position: absolute;
+            top: var(--start-y);
+            will-change: transform;
+            /* La dirección (izquierda->derecha o derecha->izquierda) se
+               controla con la variable --dir (1 o -1) definida por JS */
+            animation: moveX var(--duration-x) linear infinite;
+            animation-delay: var(--delay);
+        }
+
+        .butterfly-inner {
+            will-change: transform;
+            /* Variación de altura orgánica (ondulación) */
+            animation: waveY var(--duration-y) ease-in-out infinite alternate;
+            animation-delay: calc(var(--delay) * -0.5); /* Desfase para mayor naturalidad */
+        }
+
+        /*
+           Se elimina el "aleteo" simulado con scaleX (CSS). El webp de la
+           mariposa ya trae su propia animación nativa de aleteo, así que
+           aquí solo se le aplican los efectos de flotar (waveY) y
+           desplazarse (moveX heredado del wrapper). No se aplica ninguna
+           animación adicional sobre la imagen misma.
+        */
+        .butterfly {
+            width: auto;
+            height: auto;
+            max-width: none;
+            image-rendering: high-quality;
+            will-change: transform;
+            /* Si la mariposa vuela hacia la izquierda, se invierte
+               horizontalmente para que no se vea "de espaldas".
+               --bfly-scale reduce ligeramente su tamaño de forma aleatoria. */
+            transform: scale(var(--bfly-scale, 1)) scaleX(var(--facing, 1));
+            transform-origin: center;
+        }
+
+        /* Movimiento horizontal compartido, ahora bidireccional según --dir */
+        @keyframes moveX {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(calc(var(--dir, 1) * 130vw), 0, 0); }
+        }
+
+        /* Oscilación sutil para nubes */
+        @keyframes floatY {
+            0% { transform: translate3d(0, -8px, 0); }
+            100% { transform: translate3d(0, 8px, 0); }
+        }
+
+        /* Trayectoria ondulada orgánica para mariposas */
+        @keyframes waveY {
+            0% { transform: translate3d(0, -35px, 0); }
+            100% { transform: translate3d(0, 35px, 0); }
+        }
+
+        /* Ajustes menores para dispositivos móviles sin alterar proporciones */
+        @media (max-width: 768px) {
+            .item-sleep, .item-diadema, .item-blanket, .item-strawberry {
+                transform: scale(0.85);
+                transform-origin: top left;
+            }
+        }
+    </style>
+    <script>
+        /* =========================================================
+           REFUERZO RESPONSIVO CROSS-BROWSER
+           Safari iOS (y Chrome/Firefox en Android) cambian la altura
+           real del viewport cuando aparece/desaparece la barra de
+           direcciones. 100vh/100dvh no siempre es fiable en todos los
+           navegadores, así que calculamos la altura real con JS como
+           tercera capa de seguridad (usada en el CSS como
+           calc(var(--vh, 1vh) * 100)).
+        ========================================================= */
+        function setRealViewportHeight() {
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        }
+        setRealViewportHeight();
+        window.addEventListener('resize', setRealViewportHeight);
+        window.addEventListener('orientationchange', setRealViewportHeight);
+        // pageshow cubre el caso de volver desde el historial en Safari (bfcache)
+        window.addEventListener('pageshow', setRealViewportHeight);
+
+        /* =========================================================
+           BLOQUEO DE F12 / DEVTOOLS / CONSOLA
+           Aviso honesto: esto es una barrera disuasoria del lado del
+           cliente. Ningún método en JavaScript puede impedir al 100%
+           que alguien abra las herramientas de desarrollador de su
+           propio navegador (es una decisión que el navegador reserva
+           al usuario). Lo de abajo bloquea los atajos y el menú
+           contextual más comunes, y dificulta dejar la consola abierta.
+        ========================================================= */
+        document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+        document.addEventListener('keydown', (e) => {
+            const key = e.key ? e.key.toUpperCase() : '';
+            const blockCombo =
+                key === 'F12' ||
+                (e.ctrlKey && e.shiftKey && ['I', 'J', 'C', 'K'].includes(key)) ||
+                (e.metaKey && e.altKey && ['I', 'J', 'C'].includes(key)) || // Safari en Mac
+                (e.ctrlKey && key === 'U'); // ver código fuente
+
+            if (blockCombo) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+        });
+
+        // Dificulta mantener la consola abierta/inspeccionando el DOM
+        (function () {
+            setInterval(() => {
+                debugger;
+            }, 1000);
+        })();
+
+        // Limpia cualquier salida de consola que pudiera filtrar detalles internos
+        try {
+            const noop = () => {};
+            ['log', 'warn', 'error', 'info', 'debug', 'table', 'dir'].forEach((m) => {
+                console[m] = noop;
+            });
+        } catch (err) { /* silencioso */ }
+    </script>
+</head>
+<body>
+
+    <div class="scene">
+
+        <!-- Contenedor exclusivo para las nubes en la parte superior -->
+        <div id="clouds-container" class="clouds-container"></div>
+
+        <!-- Elementos dispersos en resolución nativa, según los recuadros indicados -->
+        <img src="https://raw.githubusercontent.com/eamxat/Leafy/refs/heads/main/sleep.webp" alt="Personaje dormido" class="scene-item item-sleep">
+        <img src="https://raw.githubusercontent.com/eamxat/Leafy/refs/heads/main/diadema.webp" alt="Diadema" class="scene-item item-diadema">
+        <img src="https://raw.githubusercontent.com/eamxat/Leafy/refs/heads/main/blanket.webp" alt="Cobija" class="scene-item item-blanket">
+        <img src="https://raw.githubusercontent.com/eamxat/Leafy/refs/heads/main/strawberry.webp" alt="Smile fresa" class="scene-item item-strawberry">
+
+        <!-- Logotipo -->
+        <img src="https://raw.githubusercontent.com/eamxat/Images/4afc6514504cbe94483fef55564cf41a5c33aa86/xatlogo%20text2.svg" alt="Logotipo" class="brand-logo">
+
+        <!-- Contenedor general para mariposas -->
+        <div id="butterflies-container" class="butterflies-container"></div>
+
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+
+            // --- GENERACIÓN DE NUBES (sistema continuo) ---
+            // En vez de crear un lote fijo de nubes que se van agotando,
+            // se mantiene un "pool" que siempre repone una nube nueva en
+            // cuanto una termina su recorrido, evitando que el cielo se
+            // quede vacío en algún momento.
+            const cloudsContainer = document.getElementById('clouds-container');
+            const cloudImages = [
+                'https://raw.githubusercontent.com/eamxat/Leafy/refs/heads/main/nube1.png',
+                'https://raw.githubusercontent.com/eamxat/Leafy/refs/heads/main/nube2.png',
+                'https://raw.githubusercontent.com/eamxat/Leafy/refs/heads/main/nube3.png'
+            ];
+
+            // Más nubes simultáneas para que se vea más dinámico (antes 3-5)
+            const CLOUD_POOL_SIZE = Math.floor(Math.random() * 3) + 6; // 6 a 8
+
+            function spawnCloud(isInitial) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'cloud-wrapper';
+
+                const inner = document.createElement('div');
+                inner.className = 'cloud-inner';
+
+                const img = document.createElement('img');
+                img.src = cloudImages[Math.floor(Math.random() * cloudImages.length)];
+                img.alt = "";
+
+                // Más arriba: entre 0% y 9% de la franja superior de nubes
+                const startY = (Math.random() * 9);
+
+                // Duración más variada y algo más ágil para sentirse más dinámico
+                const durationX = (Math.random() * 45) + 40; // 40 a 85s
+
+                // Oscilación de flotación (8 a 15 segundos)
+                const durationY = (Math.random() * 7) + 8;
+
+                // Opacidad natural (70% - 95%)
+                const opacity = (Math.random() * 0.25) + 0.70;
+
+                // Ligeramente más pequeñas para dar más profundidad/realismo
+                const scale = (Math.random() * 0.17) + 0.38; // entre 0.38 y 0.55
+
+                // Solo en la carga inicial usamos delay negativo para que el
+                // cielo aparezca ya poblado desde el primer segundo; las
+                // nubes que se van reponiendo después entran limpiamente
+                // desde fuera de cuadro.
+                const delay = isInitial ? (Math.random() * -durationX) : 0;
+
+                wrapper.style.setProperty('--start-y', `${startY}vh`);
+                wrapper.style.setProperty('--dir', 1);
+                wrapper.style.setProperty('--duration-x', `${durationX}s`);
+                wrapper.style.setProperty('--delay', `${delay}s`);
+                inner.style.setProperty('--duration-y', `${durationY}s`);
+                inner.style.setProperty('--cloud-opacity', opacity);
+                img.style.setProperty('--cloud-scale', scale);
+
+                // Una sola pasada (sin "infinite"): al terminar, se elimina
+                // y se repone inmediatamente con una nube nueva, manteniendo
+                // siempre el mismo número de nubes en pantalla.
+                wrapper.style.animationIterationCount = '1';
+                wrapper.style.animationFillMode = 'forwards';
+
+                wrapper.addEventListener('animationend', () => {
+                    wrapper.remove();
+                    spawnCloud(false);
+                });
+
+                inner.appendChild(img);
+                wrapper.appendChild(inner);
+                cloudsContainer.appendChild(wrapper);
+            }
+
+            for (let i = 0; i < CLOUD_POOL_SIZE; i++) {
+                spawnCloud(true);
+            }
+
+            // --- GENERACIÓN DE MARIPOSAS ---
+            const butterfliesContainer = document.getElementById('butterflies-container');
+            const butterflyUrl = 'https://raw.githubusercontent.com/eamxat/Leafy/refs/heads/main/butterfly.webp';
+
+            // Cantidad aleatoria estricta entre 6 y 8 mariposas
+            const numButterflies = Math.floor(Math.random() * 3) + 6;
+
+            for (let i = 0; i < numButterflies; i++) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'butterfly-wrapper';
+
+                const inner = document.createElement('div');
+                inner.className = 'butterfly-inner';
+
+                const img = document.createElement('img');
+                img.src = butterflyUrl;
+                img.className = 'butterfly';
+                img.alt = "";
+
+                /*
+                   Distribución de altura: entre el 5% y el 48% de la pantalla
+                   (antes 10%-60%), un poco más arriba para que no se vean tan
+                   abajo, evitando por completo la zona inferior derecha del
+                   personaje.
+                */
+                const startY = (Math.random() * 43) + 5;
+
+                // Velocidad lenta: tardan entre 18 y 30 segundos en cruzar
+                const durationX = (Math.random() * 12) + 18;
+
+                // Frecuencia de ondulación vertical (2.5 a 5 segundos)
+                const durationY = (Math.random() * 2.5) + 2.5;
+
+                // Desfase para que aparezcan escalonadamente
+                const delay = (Math.random() * -45);
+
+                // Dirección aleatoria: 50% van hacia la derecha, 50% hacia la izquierda
+                const goingRight = Math.random() < 0.5;
+                const dir = goingRight ? 1 : -1;
+
+                // Si va hacia la derecha entra por la izquierda de la pantalla;
+                // si va hacia la izquierda entra por la derecha.
+                wrapper.style.left = goingRight ? '-10vw' : '110vw';
+
+                // Se voltea horizontalmente el webp cuando vuela hacia la
+                // izquierda, para que no se vea "de espaldas". No se toca
+                // el aleteo nativo del webp, solo la orientación general.
+                img.style.setProperty('--facing', goingRight ? 1 : -1);
+
+                // Ligeramente más pequeñas y con variación natural de tamaño
+                const bflyScale = (Math.random() * 0.15) + 0.72; // entre 0.72 y 0.87
+                img.style.setProperty('--bfly-scale', bflyScale);
+
+                wrapper.style.setProperty('--start-y', `${startY}vh`);
+                wrapper.style.setProperty('--dir', dir);
+                wrapper.style.setProperty('--duration-x', `${durationX}s`);
+                wrapper.style.setProperty('--delay', `${delay}s`);
+
+                inner.style.setProperty('--duration-y', `${durationY}s`);
+
+                inner.appendChild(img);
+                wrapper.appendChild(inner);
+                butterfliesContainer.appendChild(wrapper);
+            }
+        });
+    </script>
+</body>
+</html>
