@@ -7,7 +7,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="format-detection" content="telephone=no">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/eamxat/Images/refs/heads/main/favicon-16x16.png">
+    
     <title>Leafy Theme Xatframe</title>
+    
     <style>
         :root {
             /*
@@ -78,10 +83,10 @@
         }
 
         /*
-           Cada elemento (sleep, diadema, blanket) ahora es independiente y
-           está disperso por la escena en lugar de apilado sobre un único
-           personaje. Se conserva el tamaño intrínseco (nativo) del webp para
-           evitar cualquier escalado, pixelación o compresión.
+            Cada elemento (sleep, diadema, blanket) ahora es independiente y
+            está disperso por la escena en lugar de apilado sobre un único
+            personaje. Se conserva el tamaño intrínseco (nativo) del webp para
+            evitar cualquier escalado, pixelación o compresión.
         */
         .scene-item {
             position: absolute;
@@ -125,9 +130,16 @@
             max-width: none;
             image-rendering: high-quality;
             -webkit-user-drag: none;
-            pointer-events: none;
+            pointer-events: auto; /* Modificado: Habilitado para permitir clics y hover */
+            cursor: pointer; /* Añadido: Cursor de mano */
             z-index: 20;
             filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+            transition: transform 0.3s ease; /* Añadido: Transición suave */
+        }
+
+        /* Añadido: Efecto de aumento al pasar el cursor */
+        .brand-logo:hover {
+            transform: scale(1.1);
         }
 
         /* Nubes: contenedor más angosto en altura para que queden más arriba */
@@ -196,11 +208,11 @@
         }
 
         /*
-           Se elimina el "aleteo" simulado con scaleX (CSS). El webp de la
-           mariposa ya trae su propia animación nativa de aleteo, así que
-           aquí solo se le aplican los efectos de flotar (waveY) y
-           desplazarse (moveX heredado del wrapper). No se aplica ninguna
-           animación adicional sobre la imagen misma.
+            Se elimina el "aleteo" simulado con scaleX (CSS). El webp de la
+            mariposa ya trae su propia animación nativa de aleteo, así que
+            aquí solo se le aplican los efectos de flotar (waveY) y
+            desplazarse (moveX heredado del wrapper). No se aplica ninguna
+            animación adicional sobre la imagen misma.
         */
         .butterfly {
             width: auto;
@@ -241,6 +253,7 @@
             }
         }
     </style>
+    
     <script>
         /* =========================================================
            REFUERZO RESPONSIVO CROSS-BROWSER
@@ -316,8 +329,10 @@
         <img src="https://raw.githubusercontent.com/eamxat/Leafy/refs/heads/main/blanket.webp" alt="Cobija" class="scene-item item-blanket">
         <img src="https://raw.githubusercontent.com/eamxat/Leafy/refs/heads/main/strawberry.webp" alt="Smile fresa" class="scene-item item-strawberry">
 
-        <!-- Logotipo -->
-        <img src="https://raw.githubusercontent.com/eamxat/Images/4afc6514504cbe94483fef55564cf41a5c33aa86/xatlogo%20text2.svg" alt="Logotipo" class="brand-logo">
+        <!-- Logotipo envuelto en un enlace hacia xat.com -->
+        <a href="https://xat.com" target="_blank" rel="noopener noreferrer">
+            <img src="https://raw.githubusercontent.com/eamxat/Images/4afc6514504cbe94483fef55564cf41a5c33aa86/xatlogo%20text2.svg" alt="Logotipo" class="brand-logo">
+        </a>
 
         <!-- Contenedor general para mariposas -->
         <div id="butterflies-container" class="butterflies-container"></div>
